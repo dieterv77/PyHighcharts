@@ -19,11 +19,9 @@ from PyHighcharts.highcharts.common import Formatter
 
 
 # Stdlib Imports
-import datetime, random, webbrowser, os, inspect
+import datetime, random, webbrowser, os, inspect, urllib
 from _abcoll import Iterable
 
-global TMP_DIR
-TMP_DIR = "/tmp/highcharts_tmp/"
 DEFAULT_HEADERS = """<script type='text/javascript' src=\
 'https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
 <script src="http://code.highcharts.com/highcharts.js"></script>
@@ -32,9 +30,9 @@ DEFAULT_HEADERS = """<script type='text/javascript' src=\
 
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
 # Static Vars
-BASE_TEMPLATE = ROOT_PATH + "/templates/base.tmp"
-SHOW_TEMPLATE = ROOT_PATH + "/templates/show_temp.tmp"
-GECKO_TEMPLATE = ROOT_PATH + "/templates/gecko_temp.tmp"
+BASE_TEMPLATE = os.path.join(ROOT_PATH,"templates", "base.tmp")
+SHOW_TEMPLATE = os.path.join(ROOT_PATH,"templates", "show_temp.tmp")
+GECKO_TEMPLATE = os.path.join(ROOT_PATH, "templates", "gecko_temp.tmp")
 
 DEFAULT_POINT_INTERVAL = 86400000
 
@@ -46,9 +44,6 @@ FORMAT_SPECIAL_CASES = {
     "load": "skip_quotes",
     "multiaxis": "multiaxis"
 }
-
-def set_temp_dir(temp_dir):
-    globals()['TMP_DIR'] = temp_dir
 
 class HighchartError(Exception):
     """ Highcharts Error Class """
@@ -400,22 +395,20 @@ class Highchart(object):
                 self.options[key].update_dict(**val)
 
 
-    def show(self):
+    def show(self, temp_dir='.', fname=None):
         """ Show Function """
         handle = webbrowser.get()
-        if not os.path.exists(TMP_DIR): 
-            os.mkdir(TMP_DIR)
-        new_filename = "%x.html" % (random.randint(pow(16, 5), pow(16, 6)-1))
-        temp_dir = globals()['TMP_DIR']
-        if not temp_dir[-1] == "/":
-            temp_dir += "/"
-        new_fn = temp_dir + new_filename
+        if fname is None:
+            new_filename = "%x.html" % (random.randint(pow(16, 5), pow(16, 6)-1))
+        else:
+            new_filename = fname
+        new_fn = os.path.join(temp_dir, new_filename)
         with open(SHOW_TEMPLATE, 'rb') as file_open:
             tmp = file_open.read()
         html = tmp.format(chart_data=self.__render__(ret=True))
         with open(new_fn, 'wb') as file_open:
             file_open.write(html)
-        handle.open("file://"+new_fn)
+        handle.open("file:"+urllib.pathname2url(new_fn))
 
 
     def generate(self):
