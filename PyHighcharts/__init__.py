@@ -1,1 +1,1 @@
-from highcharts.chart import Highchart
+from highcharts.chart import Highchart, Highstock

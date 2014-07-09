@@ -28,11 +28,17 @@ DEFAULT_HEADERS = """<script type='text/javascript' src=\
 <script src="http://code.highcharts.com/highcharts-more.js"></script>
 <script src="http://code.highcharts.com/modules/exporting.js"></script>"""
 
+HIGHSTOCK_DEFAULT_HEADERS = """<script type='text/javascript' src=\
+'https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>
+<script src="http://code.highcharts.com/stock/highstock.js"></script>"""
+
 ROOT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
 # Static Vars
 BASE_TEMPLATE = os.path.join(ROOT_PATH,"templates", "base.tmp")
 SHOW_TEMPLATE = os.path.join(ROOT_PATH,"templates", "show_temp.tmp")
 GECKO_TEMPLATE = os.path.join(ROOT_PATH, "templates", "gecko_temp.tmp")
+HIGHSTOCK_BASE_TEMPLATE = os.path.join(ROOT_PATH,"templates", "highstock_base.tmp")
+HIGHSTOCK_SHOW_TEMPLATE = os.path.join(ROOT_PATH,"templates", "highstock_show_temp.tmp")
 
 DEFAULT_POINT_INTERVAL = 86400000
 
@@ -252,12 +258,16 @@ class Highchart(object):
         # Some Extra Vals to store: 
         self.data_set_count = 0
 
+        self.base_template = BASE_TEMPLATE
+        self.gecko_template = GECKO_TEMPLATE
+        self.show_template = SHOW_TEMPLATE
+
 
     def __render__(self, ret=False, template="base"):
         if template == "base":
-            TEMPLATE = BASE_TEMPLATE
+            TEMPLATE = self.base_template
         elif template == "gecko":
-            TEMPLATE = GECKO_TEMPLATE
+            TEMPLATE = self.gecko_template
         with open(TEMPLATE,"rb") as template_file:
             tmp = template_file.read()
         rendered = tmp.format(**self.__export_options__())
@@ -403,7 +413,7 @@ class Highchart(object):
         else:
             new_filename = fname
         new_fn = os.path.join(temp_dir, new_filename)
-        with open(SHOW_TEMPLATE, 'rb') as file_open:
+        with open(self.show_template, 'rb') as file_open:
             tmp = file_open.read()
         html = tmp.format(chart_data=self.__render__(ret=True))
         with open(new_fn, 'wb') as file_open:
@@ -423,9 +433,22 @@ class Highchart(object):
             raise HighchartsError("All Axis Must Be Of Type: yAxisOptions")
 
 
-
     @staticmethod
     def need():
         """ Returns Header """
         return DEFAULT_HEADERS
+
+class Highstock(Highchart):
+    """ Highstock Wrapper """
+
+    def __init__(self, **kwargs):
+        Highchart.__init__(self, **kwargs)
+        self.base_template = HIGHSTOCK_BASE_TEMPLATE
+        self.gecko_template = GECKO_TEMPLATE
+        self.show_template = HIGHSTOCK_SHOW_TEMPLATE
+    
+    @staticmethod
+    def need():
+        """ Returns Header """
+        return HIGHSTOCK_DEFAULT_HEADERS
 
