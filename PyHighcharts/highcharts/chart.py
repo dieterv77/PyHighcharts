@@ -284,8 +284,6 @@ class Highchart(object):
 
     def __load_defaults__(self):
         self.options["chart"].update_dict(renderTo='container')
-        self.options["title"].update_dict(text='A New Highchart')
-        self.options["yAxis"].update_dict(title_text='units') 
         self.options["credits"].update_dict(enabled=False)
 
 
