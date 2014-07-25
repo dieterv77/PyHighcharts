@@ -5,7 +5,7 @@ setup(
     version='0.0.1',
     author='Dieter Vandenbussche',
     author_email='',
-    packages=['PyHighcharts', 'PyHighcharts.highcharts'],
+    packages=['PyHighcharts', 'PyHighcharts.highcharts', 'PyHighcharts.plt_pandas'],
     package_data={'PyHighcharts': ['templates/*.tmp']},
     url='',
     description='',
