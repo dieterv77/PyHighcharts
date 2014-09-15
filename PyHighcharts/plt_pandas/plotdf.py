@@ -1,10 +1,64 @@
+import math
+import os.path
+
 import pandas
+
+from jinja2 import Template
 
 from PyHighcharts import Highstock, Highchart
 
+MULTICHART_TEMPLATE="""
+<html>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<head>
+{{ needs }}
+</head>
+<body>
+{% for chart in charts %}
+    <div id="{{ chart.container }}" style="height: {{ chart.height }}%; width: 100%;"></div>
+{% endfor %}
+
+{% for chart in charts %}
+<script type='text/javascript'>
+    {{ chart.data }}
+</script>
+{% endfor %}
+</body>
+</html>
+"""
+class TemplateChart(object):
+    def __init__(self, idx, chart, height):
+        self.chart = chart
+        self.idx = idx
+        self.container = 'chart%d' % idx
+        self.chart.options['chart'].renderTo = self.container
+        self.height = str(height)
+        self.data = self.chart.generate()
+
 class MultiChart(object):
-    def __init__(self, charts):
+    def __init__(self, charts=None):
+        if charts is None:
+            charts = []
         self.charts = list(charts)
+        self.template = Template(MULTICHART_TEMPLATE)
+
+    def addChart(self, chart):
+        self.charts.append(chart)
+
+    def show(self, temp_dir='.', fname=None):
+        template_charts = []
+        height = int(math.floor(100.0/len(self.charts)))
+        for idx, chart in enumerate(self.charts):
+            template_charts.append(TemplateChart(idx, chart, height))
+
+        html = self.template.render(needs=self.charts[0].need(), charts=template_charts)
+        if fname is None:
+            new_filename = "%x.html" % (random.randint(pow(16, 5), pow(16, 6)-1))
+        else:
+            new_filename = fname
+        new_fn = os.path.join(temp_dir, new_filename)
+        with open(new_fn, 'wb') as file_open:
+            file_open.write(html)
 
 def createBarChart(df, **kwargs):
     """Create line chart from DataFrame
