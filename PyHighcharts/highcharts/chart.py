@@ -402,10 +402,8 @@ class Highchart(object):
             for key, val in new_options.items():
                 self.options[key].update_dict(**val)
 
-
-    def show(self, temp_dir='.', fname=None):
-        """ Show Function """
-        handle = webbrowser.get()
+    def write(self, temp_dir='.', fname=None):
+        """ Write to file, returns filename """
         if fname is None:
             new_filename = "%x.html" % (random.randint(pow(16, 5), pow(16, 6)-1))
         else:
@@ -416,8 +414,13 @@ class Highchart(object):
         html = tmp.format(chart_data=self.__render__(ret=True))
         with open(new_fn, 'wb') as file_open:
             file_open.write(html)
-        handle.open("file:"+urllib.pathname2url(new_fn))
+        return new_fn
 
+    def show(self, temp_dir='.', fname=None):
+        """ Show Function """
+        handle = webbrowser.get()
+        new_fn = self.write(temp_dir, fname)
+        handle.open("file:"+urllib.pathname2url(new_fn))
 
     def generate(self):
         """ __render__ Wrapper """
