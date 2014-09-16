@@ -193,7 +193,11 @@ def createScatterChart(df, pairs, **kwargs):
         Chart title
     """
     H = Highchart(width=500, height=500, renderTo='container')
-    for name, (x,y) in pairs.iteritems():
+    if isinstance(pairs, dict):
+        data = sorted(pairs.iteritems(), key=lambda x: x[0])
+    else:
+        data = pairs
+    for name, (x,y) in data:
         H.add_data_set(zip(df[x], df[y]), type='spline', name=name)
     options = {'chart': {'zoomType': 'xy'}}
     options.update(__getOptionUpdatesFromKwargs(kwargs))
