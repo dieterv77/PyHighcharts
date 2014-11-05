@@ -168,7 +168,10 @@ def createStockChart(df, **kwargs):
 
     for colname, data in df.iteritems():
         H.add_data_set(zip(index, data), type='line', name=colname)
-    options = {'chart': {'zoomType': 'x'}}
+    options = {'chart': {'zoomType': 'x'}, 
+               'legend': {'enabled': True},
+               'tooltip': {'shared': False},
+                }
     if is_dates:
         options.update({'xAxis': {'type': 'datetime'}})
     options.update(__getOptionUpdatesFromKwargs(kwargs))
