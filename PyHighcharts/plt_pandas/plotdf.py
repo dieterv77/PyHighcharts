@@ -7,6 +7,45 @@ from jinja2 import Template
 
 from PyHighcharts import Highstock, Highchart
 
+def indent(text, indents=1):
+    if not text or not isinstance(text, str):
+        return ''
+    jointext = ''.join(['\n'] + ['    '] * indents)
+    return jointext.join(text.split('\n'))
+
+class Appender(object):
+    """
+    A function decorator that will append an addendum to the docstring
+    of the target function.
+
+    This decorator should be robust even if func.__doc__ is None
+    (for example, if -OO was passed to the interpreter).
+
+    Usage: construct a docstring.Appender with a string to be joined to
+    the original docstring. An optional 'join' parameter may be supplied
+    which will be used to join the docstring and addendum. e.g.
+
+    add_copyright = Appender("Copyright (c) 2009", join='\n')
+
+    @add_copyright
+    def my_dog(has='fleas'):
+        "This docstring will have a copyright below"
+        pass
+    """
+    def __init__(self, addendum, join='', indents=0):
+        if indents > 0:
+            self.addendum = indent(addendum, indents=indents)
+        else:
+            self.addendum = addendum
+        self.join = join
+
+    def __call__(self, func):
+        func.__doc__ = func.__doc__ if func.__doc__ else ''
+        self.addendum = self.addendum if self.addendum else ''
+        docitems = [func.__doc__, self.addendum]
+        func.__doc__ = self.join.join(docitems)
+        return func
+
 MULTICHART_TEMPLATE="""
 <html>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
@@ -58,6 +97,20 @@ class MultiChart(object):
         with open(new_fn, 'wb') as file_open:
             file_open.write(html)
 
+otherparams = \
+"""
+    Other parameters
+    ----------------
+    title : string, optional
+        Chart title
+    x_title: string, optional
+        X-axis title
+    y_title: string, optional
+        Y-axis title
+    size: tuple, option
+        Tuple with (width, height)
+"""
+
 def __getOptionUpdatesFromKwargs(kwargs):
     options = {}
     if 'title' in kwargs:
@@ -68,6 +121,7 @@ def __getOptionUpdatesFromKwargs(kwargs):
         options.update({'yAxis': {'title' : {'text': kwargs['y_title']}}})
     return options
 
+@Appender(otherparams)
 def createBarChart(df, **kwargs):
     """Create line chart from DataFrame
 
@@ -76,13 +130,11 @@ def createBarChart(df, **kwargs):
     df : pandas.DataFrame
         DataFrame with data
     
-    Other parameters
-    ----------------
-    title : string, optional
-        Chart title
     """
+
     index = df.index
-    H = Highchart(width=500, height=500, renderTo='container')
+    size = kwargs.get('size', (500,500))
+    H = Highchart(width=size[0], height=size[1], renderTo='container')
     for colname, data in df.iteritems():
         H.add_data_set(zip(index, data), type='bar', name=colname)
     options = {'chart': {'zoomType': 'x'}}
@@ -91,6 +143,7 @@ def createBarChart(df, **kwargs):
 
     return H
 
+@Appender(otherparams)
 def createColumnChart(df, **kwargs):
     """Create line chart from DataFrame
 
@@ -99,13 +152,10 @@ def createColumnChart(df, **kwargs):
     df : pandas.DataFrame
         DataFrame with data
     
-    Other parameters
-    ----------------
-    title : string, optional
-        Chart title
     """
     index = df.index
-    H = Highchart(width=500, height=500, renderTo='container')
+    size = kwargs.get('size', (500,500))
+    H = Highchart(width=size[0], height=size[1], renderTo='container')
     for colname, data in df.iteritems():
         H.add_data_set(zip(index, data), type='bar', name=colname)
     options = {'chart': {'zoomType': 'x'}}
@@ -114,6 +164,7 @@ def createColumnChart(df, **kwargs):
 
     return H
 
+@Appender(otherparams)
 def createLineChart(df, **kwargs):
     """Create line chart from DataFrame
 
@@ -122,10 +173,6 @@ def createLineChart(df, **kwargs):
     df : pandas.DataFrame
         DataFrame with data
     
-    Other parameters
-    ----------------
-    title : string, optional
-        Chart title
     """
     is_dates = False
     index = df.index
@@ -133,7 +180,8 @@ def createLineChart(df, **kwargs):
         is_dates = True
         index = index.to_pydatetime()
 
-    H = Highchart(width=500, height=500, renderTo='container')
+    size = kwargs.get('size', (500,500))
+    H = Highchart(width=size[0], height=size[1], renderTo='container')
 
     for colname, data in df.iteritems():
         H.add_data_set(zip(index, data), type='line', name=colname)
@@ -145,6 +193,7 @@ def createLineChart(df, **kwargs):
 
     return H
 
+@Appender(otherparams)
 def createStockChart(df, **kwargs):
     """Create stock chart from DataFrame
 
@@ -153,10 +202,6 @@ def createStockChart(df, **kwargs):
     df : pandas.DataFrame
         DataFrame with data
     
-    Other parameters
-    ----------------
-    title : string, optional
-        Chart title
     """
     is_dates = False
     index = df.index
@@ -164,7 +209,8 @@ def createStockChart(df, **kwargs):
         is_dates = True
         index = index.to_pydatetime()
 
-    H = Highstock(width=500, height=500, renderTo='container')
+    size = kwargs.get('size', (500,500))
+    H = Highstock(width=size[0], height=size[1], renderTo='container')
 
     for colname, data in df.iteritems():
         H.add_data_set(zip(index, data), type='line', name=colname)
@@ -179,6 +225,7 @@ def createStockChart(df, **kwargs):
 
     return H
 
+@Appender(otherparams)
 def createScatterChart(df, pairs, **kwargs):
     """Scatter plot pairs of columns of given DataFrame
 
@@ -190,12 +237,9 @@ def createScatterChart(df, pairs, **kwargs):
         Dict mapping names to pairs (tuples) of columns names
         in df.  This describes each series that will be plotted
 
-    Other parameters
-    ----------------
-    title : string, optional
-        Chart title
     """
-    H = Highchart(width=500, height=500, renderTo='container')
+    size = kwargs.get('size', (500,500))
+    H = Highchart(width=size[0], height=size[1], renderTo='container')
     if isinstance(pairs, dict):
         data = sorted(pairs.iteritems(), key=lambda x: x[0])
     else:
