@@ -1,5 +1,6 @@
 import os.path
 import random
+import datetime
 
 import pandas
 
@@ -121,6 +122,18 @@ def __getOptionUpdatesFromKwargs(kwargs):
         options.update({'yAxis': {'title' : {'text': kwargs['y_title']}}})
     return options
 
+def __getIndex(index):
+    is_dates = False
+    if isinstance(index, pandas.DatetimeIndex):
+        is_dates = True
+        index = index.to_pydatetime()
+    elif isinstance(index[0], datetime.date):
+        is_dates = True
+        index = [datetime.datetime(d.year,d.month,d.day) for d in index]
+    elif isinstance(index[0], datetime.date):
+        is_dates = True
+    return index, is_dates
+
 @Appender(otherparams)
 def createBarChart(df, **kwargs):
     """Create line chart from DataFrame
@@ -174,11 +187,7 @@ def createLineChart(df, **kwargs):
         DataFrame with data
     
     """
-    is_dates = False
-    index = df.index
-    if isinstance(index, pandas.DatetimeIndex):
-        is_dates = True
-        index = index.to_pydatetime()
+    index, is_dates = __getIndex(df.index)
 
     size = kwargs.get('size', (500,500))
     H = Highchart(width=size[0], height=size[1], renderTo='container')
@@ -203,11 +212,7 @@ def createStockChart(df, **kwargs):
         DataFrame with data
     
     """
-    is_dates = False
-    index = df.index
-    if isinstance(index, pandas.DatetimeIndex):
-        is_dates = True
-        index = index.to_pydatetime()
+    index, is_dates = __getIndex(df.index)
 
     size = kwargs.get('size', (500,500))
     H = Highstock(width=size[0], height=size[1], renderTo='container')
