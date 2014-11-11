@@ -54,7 +54,13 @@ MULTICHART_TEMPLATE="""
 {{ needs }}
 </head>
 <body>
+<ul>
 {% for chart in charts %}
+    <li><a href="#{{ chart.container }}">{{ chart.title }}</a></li>
+{% endfor %}
+</ul>
+{% for chart in charts %}
+    <a name="{{ chart.container }}" />
     <div id="{{ chart.container }}" style="width: 100%;"></div>
 {% endfor %}
 
@@ -69,6 +75,7 @@ MULTICHART_TEMPLATE="""
 class TemplateChart(object):
     def __init__(self, idx, chart):
         self.chart = chart
+        self.title = chart.title()
         self.idx = idx
         self.container = 'chart%d' % idx
         self.chart.options['chart'].renderTo = self.container

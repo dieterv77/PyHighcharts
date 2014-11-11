@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='PyHighcharts',
-    version='0.0.6',
+    version='0.0.7',
     author='Dieter Vandenbussche',
     author_email='',
     packages=['PyHighcharts', 'PyHighcharts.highcharts', 'PyHighcharts.plt_pandas'],
