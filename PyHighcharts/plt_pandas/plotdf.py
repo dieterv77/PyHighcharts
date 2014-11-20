@@ -1,6 +1,7 @@
 import os.path
 import random
 import datetime
+import collections
 
 import pandas
 
@@ -46,6 +47,15 @@ class Appender(object):
         docitems = [func.__doc__, self.addendum]
         func.__doc__ = self.join.join(docitems)
         return func
+
+def update(d, u):
+    for k, v in u.iteritems():
+        if isinstance(v, collections.Mapping):
+            r = update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d
 
 MULTICHART_TEMPLATE="""
 <html>
@@ -122,11 +132,11 @@ otherparams = \
 def __getOptionUpdatesFromKwargs(kwargs):
     options = {}
     if 'title' in kwargs:
-        options.update({'title' : {'text': kwargs['title']}})
+        update(options, {'title' : {'text': kwargs['title']}})
     if 'x_title' in kwargs:
-        options.update({'xAxis': {'title' : {'text': kwargs['x_title']}}})
+        update(options, {'xAxis': {'title' : {'text': kwargs['x_title']}}})
     if 'y_title' in kwargs:
-        options.update({'yAxis': {'title' : {'text': kwargs['y_title']}}})
+        update(options, {'yAxis': {'title' : {'text': kwargs['y_title']}}})
     return options
 
 def __getIndex(index):
@@ -143,7 +153,7 @@ def __getIndex(index):
 
 @Appender(otherparams)
 def createBarChart(df, **kwargs):
-    """Create line chart from DataFrame
+    """Create bar chart from DataFrame
 
     Parameters
     ----------
@@ -156,16 +166,17 @@ def createBarChart(df, **kwargs):
     size = kwargs.get('size', (500,500))
     H = Highchart(width=size[0], height=size[1], renderTo='container')
     for colname, data in df.iteritems():
-        H.add_data_set(zip(index, data), type='bar', name=colname)
+        H.add_data_set(data.values, type='bar', name=colname)
     options = {'chart': {'zoomType': 'x'}}
-    options.update(__getOptionUpdatesFromKwargs(kwargs))
+    update(options, {'xAxis': {'categories': index.tolist()}})
+    update(options, __getOptionUpdatesFromKwargs(kwargs))
     H.set_options(options)
 
     return H
 
 @Appender(otherparams)
 def createColumnChart(df, **kwargs):
-    """Create line chart from DataFrame
+    """Create columns chart from DataFrame
 
     Parameters
     ----------
@@ -177,9 +188,10 @@ def createColumnChart(df, **kwargs):
     size = kwargs.get('size', (500,500))
     H = Highchart(width=size[0], height=size[1], renderTo='container')
     for colname, data in df.iteritems():
-        H.add_data_set(zip(index, data), type='bar', name=colname)
+        H.add_data_set(data, type='column', name=colname)
     options = {'chart': {'zoomType': 'x'}}
-    options.update(__getOptionUpdatesFromKwargs(kwargs))
+    update(options, {'xAxis': {'categories': index.tolist()}})
+    update(options, __getOptionUpdatesFromKwargs(kwargs))
     H.set_options(options)
 
     return H
@@ -203,8 +215,8 @@ def createLineChart(df, **kwargs):
         H.add_data_set(zip(index, data), type='line', name=colname)
     options = {'chart': {'zoomType': 'x'}}
     if is_dates:
-        options.update({'xAxis': {'type': 'datetime'}})
-    options.update(__getOptionUpdatesFromKwargs(kwargs))
+        update(options, {'xAxis': {'type': 'datetime'}})
+    update(options, __getOptionUpdatesFromKwargs(kwargs))
     H.set_options(options)
 
     return H
@@ -231,7 +243,7 @@ def createStockChart(df, **kwargs):
                'tooltip': {'shared': False},
                 }
     if is_dates:
-        options.update({'xAxis': {'type': 'datetime'}})
+        update(options, {'xAxis': {'type': 'datetime'}})
     options.update(__getOptionUpdatesFromKwargs(kwargs))
     H.set_options(options)
 
@@ -259,7 +271,7 @@ def createScatterChart(df, pairs, **kwargs):
     for name, (x,y) in data:
         H.add_data_set(zip(df[x], df[y]), type='spline', name=name)
     options = {'chart': {'zoomType': 'xy'}}
-    options.update(__getOptionUpdatesFromKwargs(kwargs))
+    update(options, __getOptionUpdatesFromKwargs(kwargs))
     H.set_options(options)
 
     return H
