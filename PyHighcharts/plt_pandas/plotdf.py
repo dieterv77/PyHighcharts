@@ -9,6 +9,8 @@ from jinja2 import Template
 
 from PyHighcharts import Highstock, Highchart
 
+default_size = (900,900)
+
 def indent(text, indents=1):
     if not text or not isinstance(text, str):
         return ''
@@ -163,12 +165,36 @@ def createBarChart(df, **kwargs):
     """
 
     index = df.index
-    size = kwargs.get('size', (500,500))
+    size = kwargs.get('size', default_size)
     H = Highchart(width=size[0], height=size[1], renderTo='container')
     for colname, data in df.iteritems():
         H.add_data_set(data.values, type='bar', name=colname)
     options = {'chart': {'zoomType': 'x'}}
     update(options, {'xAxis': {'categories': index.tolist()}})
+    update(options, __getOptionUpdatesFromKwargs(kwargs))
+    H.set_options(options)
+
+    return H
+
+@Appender(otherparams)
+def createBoxChart(df, **kwargs):
+    """Create box chart from DataFrame
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame with data
+    
+    """
+
+    size = kwargs.get('size', default_size)
+    H = Highchart(width=size[0], height=size[1], renderTo='container')
+    df = df.dropna(axis=1, how='all')
+    boxdata = pandas.DataFrame({'min': df.min(), 'max': df.max(), '0.25': df.quantile(0.25), '0.75': df.quantile(0.75), 'median': df.median()})
+    boxdata = boxdata.reindex(columns=['min', '0.25', 'median', '0.75', 'max'])
+    H.add_data_set(boxdata.values.tolist(), type='boxplot', name='Observations')
+    options = {'chart': {'zoomType': 'x', 'type': 'boxplot'}}
+    update(options, {'xAxis': {'categories': boxdata.index.tolist()}})
     update(options, __getOptionUpdatesFromKwargs(kwargs))
     H.set_options(options)
 
@@ -185,7 +211,7 @@ def createColumnChart(df, **kwargs):
     
     """
     index = df.index
-    size = kwargs.get('size', (500,500))
+    size = kwargs.get('size', default_size)
     H = Highchart(width=size[0], height=size[1], renderTo='container')
     for colname, data in df.iteritems():
         H.add_data_set(data, type='column', name=colname)
@@ -208,7 +234,7 @@ def createLineChart(df, **kwargs):
     """
     index, is_dates = __getIndex(df.index)
 
-    size = kwargs.get('size', (500,500))
+    size = kwargs.get('size', default_size)
     H = Highchart(width=size[0], height=size[1], renderTo='container')
 
     for colname, data in df.iteritems():
@@ -233,7 +259,7 @@ def createStockChart(df, **kwargs):
     """
     index, is_dates = __getIndex(df.index)
 
-    size = kwargs.get('size', (500,500))
+    size = kwargs.get('size', default_size) 
     H = Highstock(width=size[0], height=size[1], renderTo='container')
 
     for colname, data in df.iteritems():
@@ -262,7 +288,7 @@ def createScatterChart(df, pairs, **kwargs):
         in df.  This describes each series that will be plotted
 
     """
-    size = kwargs.get('size', (500,500))
+    size = kwargs.get('size', default_size)
     H = Highchart(width=size[0], height=size[1], renderTo='container')
     if isinstance(pairs, dict):
         data = sorted(pairs.iteritems(), key=lambda x: x[0])
