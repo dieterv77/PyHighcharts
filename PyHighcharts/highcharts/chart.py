@@ -402,7 +402,7 @@ class Highchart(object):
             for key, val in new_options.items():
                 self.options[key].update_dict(**val)
 
-    def write(self, temp_dir='.', fname=None):
+    def write(self, temp_dir='.', fname=None, localurl=False):
         """ Write to file, returns filename """
         if fname is None:
             new_filename = "%x.html" % (random.randint(pow(16, 5), pow(16, 6)-1))
@@ -412,6 +412,9 @@ class Highchart(object):
         with open(self.show_template, 'rb') as file_open:
             tmp = file_open.read()
         html = tmp.format(chart_data=self.__render__(ret=True))
+        if localurl:
+            html = html.replace('https://ajax.googleapis.com/ajax/libs/jquery/1.7.2','js')
+            html = html.replace('http://code.highcharts.com','js')
         with open(new_fn, 'wb') as file_open:
             file_open.write(html)
         return new_fn
