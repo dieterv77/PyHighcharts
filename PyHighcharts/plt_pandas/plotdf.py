@@ -3,6 +3,7 @@ import random
 import datetime
 import collections
 
+import numpy as np
 import pandas
 
 from jinja2 import Template
@@ -276,7 +277,7 @@ def createStockChart(df, **kwargs):
     return H
 
 @Appender(otherparams)
-def createScatterChart(df, pairs, **kwargs):
+def createScatterChart(df, pairs=None, **kwargs):
     """Scatter plot pairs of columns of given DataFrame
 
     Parameters
@@ -290,12 +291,24 @@ def createScatterChart(df, pairs, **kwargs):
     """
     size = kwargs.get('size', default_size)
     H = Highchart(width=size[0], height=size[1], renderTo='container')
+    if pairs is None:
+        pairs = {'data': (df.columns[0], df.columns[1])}
     if isinstance(pairs, dict):
         data = sorted(pairs.iteritems(), key=lambda x: x[0])
     else:
         data = pairs
     for name, (x,y) in data:
-        H.add_data_set(zip(df[x], df[y]), type='spline', name=name)
+        H.add_data_set(zip(df[x], df[y]), type='scatter', name=name)
+    ref = kwargs.get('ref', None)
+    if ref is not None:
+        import statsmodels.api as sm
+        (x,y) = data[0][1]
+        result = sm.OLS(df[y], sm.add_constant(df[[x]])).fit()
+        params = result.params
+        xvals = np.linspace(min(df[x]), max(df[x]), 100)
+        yvals = params['const'] + xvals * params[x]
+        H.add_data_set(zip(xvals,yvals), type='spline', name='%s = %.3f + %.3f %s (%.2f %%)' % (y, params['const'], params[x], x, 100*result.rsquared))
+
     options = {'chart': {'zoomType': 'xy'}}
     update(options, __getOptionUpdatesFromKwargs(kwargs))
     H.set_options(options)
