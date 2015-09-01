@@ -413,8 +413,8 @@ class Highchart(object):
             tmp = file_open.read()
         html = tmp.format(chart_data=self.__render__(ret=True))
         if localurl:
-            html = html.replace('https://ajax.googleapis.com/ajax/libs/jquery/1.7.2','js')
-            html = html.replace('http://code.highcharts.com','js')
+            html = html.replace('https://ajax.googleapis.com/ajax/libs/jquery/1.7.2','/js')
+            html = html.replace('http://code.highcharts.com','/js')
         with open(new_fn, 'wb') as file_open:
             file_open.write(html)
         return new_fn

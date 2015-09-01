@@ -104,12 +104,15 @@ class MultiChart(object):
     def addChart(self, chart):
         self.charts.append(chart)
 
-    def write(self, temp_dir='.', fname=None):
+    def write(self, temp_dir='.', fname=None, localurl=False):
         template_charts = []
         for idx, chart in enumerate(self.charts):
             template_charts.append(TemplateChart(idx, chart))
 
         html = self.template.render(needs=self.charts[0].need(), charts=template_charts)
+        if localurl:
+            html = html.replace('https://ajax.googleapis.com/ajax/libs/jquery/1.7.2','/js')
+            html = html.replace('http://code.highcharts.com','/js')
         if fname is None:
             new_filename = "%x.html" % (random.randint(pow(16, 5), pow(16, 6)-1))
         else:
@@ -287,6 +290,8 @@ def createScatterChart(df, pairs=None, **kwargs):
     pairs : dict
         Dict mapping names to pairs (tuples) of columns names
         in df.  This describes each series that will be plotted
+    ref : If it is not None, then construct a regression line through
+          first pair for reference
 
     """
     size = kwargs.get('size', default_size)
