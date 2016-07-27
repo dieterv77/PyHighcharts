@@ -291,7 +291,9 @@ def createScatterChart(df, pairs=None, **kwargs):
         Dict mapping names to pairs (tuples) of columns names
         in df.  This describes each series that will be plotted
     ref : If it is not None, then construct a regression line through
-          first pair for reference
+          first pair for reference.  If a tuple of size two is passed,
+          it is treated as the (intercept, slope) of a line, otherwise
+          OLS is used to determine the intercept and slope
 
     """
     size = kwargs.get('size', default_size)
@@ -302,17 +304,24 @@ def createScatterChart(df, pairs=None, **kwargs):
         data = sorted(pairs.iteritems(), key=lambda x: x[0])
     else:
         data = pairs
+    ref = kwargs.get('ref', None)
     for name, (x,y) in data:
         H.add_data_set(zip(df[x], df[y]), type='scatter', name=name)
-    ref = kwargs.get('ref', None)
-    if ref is not None:
-        import statsmodels.api as sm
-        (x,y) = data[0][1]
-        result = sm.OLS(df[y], sm.add_constant(df[[x]])).fit()
-        params = result.params
-        xvals = np.linspace(min(df[x]), max(df[x]), 100)
-        yvals = params['const'] + xvals * params[x]
-        H.add_data_set(zip(xvals,yvals), type='spline', name='%s = %.3f + %.3f %s (%.2f %%)' % (y, params['const'], params[x], x, 100*result.rsquared))
+        if ref is not None:
+            xvals = np.linspace(min(df[x]), max(df[x]), 100)
+            if isinstance(ref, tuple):
+                if len(ref) != 2:
+                    raise ValueError('Tuple should be of size 2')
+                (a,b) = ref
+                yvals = a + xvals * b 
+                H.add_data_set(zip(xvals,yvals), type='spline', name='%s = %.3f + %.3f %s' % (y, a, b, x))
+            else:
+                import statsmodels.api as sm
+                result = sm.OLS(df[y], sm.add_constant(df[[x]])).fit()
+                params = result.params
+                (a,b) = params['const'], params[x]
+                yvals = a + xvals * b 
+                H.add_data_set(zip(xvals,yvals), type='spline', name='%s = %.3f + %.3f %s (%.2f %%)' % (y, a, b, x, 100*result.rsquared))
 
     options = {'chart': {'zoomType': 'xy'}}
     update(options, __getOptionUpdatesFromKwargs(kwargs))
